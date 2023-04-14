@@ -1,10 +1,10 @@
-setwd("~/Desktop/3-2/brsm/BRSM_Project/data")
+# setwd("~/Desktop/3-2/brsm/BRSM_Project/data")
+setwd("/Users/kakarot/Desktop/BRSM PROJECT/Data")
 
 library(ggplot2)
 library(Hmisc)
 
 questionnaire_data <- read.csv ("QuestionnaireData.csv", header=TRUE, stringsAsFactors = FALSE)
-questionnaire_data <- questionnaire_data[-participants_to_be_removed,]
 
 n <- 164 # needs to be changed
 participants_to_be_removed <- c(97, 105, 117, 36,  44,  90,  93,  95, 106, 134, 136, 155) 
@@ -15,6 +15,7 @@ subject_list <- subject_list [! subject_list %in% participants_to_be_removed]
 gambling_data <- NULL
 len_subject_list <- length(subject_list)
 
+questionnaire_data <- questionnaire_data[-participants_to_be_removed,]
 
 # Define a function to read data for a single participant
 read_participant_data <- function(participant_id) {
