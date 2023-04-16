@@ -75,6 +75,8 @@ ggplot (preferenceMean) + geom_bar (aes (x = matching, y = preference), stat = "
         plot.margin = unit(c(0.5,0.5,0.2,0.2),"cm"), axis.title.x = element_blank()) +
   coord_cartesian(ylim=c(3,4))
 
+ggsave('Matching_Vs_Preference.png')
+
 # two-tailed t.test
 t.test (preference$matching, preference$nonmatching, alternative = "two.sided", paired = TRUE, conf.level = 0.95)
 
@@ -117,16 +119,73 @@ for (k in 1:length(participantsList)){
 # barplot
 barplot (c(mean(RT$matching), mean(RT$nonmatching)), names = c("matching", "non-matching"), ylim = c(1, 1.2), ylab = "Reaction time")
 
+ggsave('Matching_Vs_RT.png')
+
 # t.test
 t.test (RT$matching, RT$nonmatching, alternative = "two.sided", paired = TRUE, conf.level = 0.95)
 
 #### CORRELATIONS
+
+abbreviateSTR <- function(value, prefix){  # format string more concisely
+  lst = c()
+  for (item in value) {
+    if (is.nan(item) || is.na(item)) { # if item is NaN return empty string
+      lst <- c(lst, '')
+      next
+    }
+    item <- round(item, 2) # round to two digits
+    if (item == 0) { # if rounding results in 0 clarify
+      item = '<.01'
+    }
+    item <- as.character(item)
+    item <- sub("(^[0])+", "", item)    # remove leading 0: 0.05 -> .05
+    item <- sub("(^-[0])+", "-", item)  # remove leading -0: -0.05 -> -.05
+    lst <- c(lst, paste(prefix, item, sep = ""))
+  }
+  return(lst)
+}
+
 # with preference for matching over non-matching
 # Create a data matrix with relevant columns from preference and questionnaire_data
 corr_data <- as.matrix(cbind ((preference$matching-preference$nonmatching), questionnaireData[,c(5, 12, 17)]))
 colnames(corr_data) <- c("preference_match_over_nonmatch", "AQ_total", "SRS_total", "factorscores")
-rcorr(corr_data, type = "spearman")
-rcorr(corr_data, type = "pearson")
+cormatrix <- rcorr(corr_data, type = "spearman")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_Matching_with_totals_S.png")
+
+cormatrix <- rcorr(corr_data, type = "pearson")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_Matchings_with_totals_P.png")
 
 # scatter plot
 corr_data <- as.data.frame(corr_data)
@@ -155,26 +214,135 @@ p3 <- ggplot(corr_data, aes(x=SRS_total, y=preference_match_over_nonmatch)) + ge
 
 grid.arrange(p1, p2, p3, widths = c(1.075, 1, 1), nrow = 1)
 
+ggsave(file='Preference%_vs_components.png', g)
+
 # with preference for matching over nonmatching, all subscales
 corr_data <- as.matrix(cbind((preference$matching-preference$nonmatching), questionnaireData[,c(5:10, 12:17)]))
 colnames(corr_data) <- c("preference_match_over_nonmatch", "AQ_total", "AQ_soc_skills", "AQ_att_switch", "AQ_att_detail", "AQ_comm", "AQ_imag", "SRS_total", "SRS_consc", "SRS_comm", "SRS_mot", "SRS_rig", "factorscores")
-rcorr(corr_data, type = "spearman")
+cormatrix <- rcorr(corr_data, type = "spearman")
+
 rcorr(corr_data, type = "pearson")
 
 # with preference for matching
 corr_data <- as.matrix(cbind ((preference$matching), questionnaireData[,c(5, 12, 17)]))
 colnames(corr_data) <- c("preference_match", "AQ_total", "SRS_total", "factorscores")
 rcorr(corr_data, type = "spearman")
-rcorr(corr_data, type = "pearson")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_Matchings_with_partwise_S.png")
+
+cormatrix <- rcorr(corr_data, type = "pearson")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_Matchings_with_partwise_P.png")
 
 # with preference for non-matching
 corr_data <- as.matrix(cbind ((preference$nonmatching), questionnaireData[,c(5, 12, 17)]))
 colnames(corr_data) <- c("preference_nonmatch", "AQ_total", "SRS_total", "factorscores")
-rcorr(corr_data, type = "spearman")
-rcorr(corr_data, type = "pearson")
+cormatrix <- rcorr(corr_data, type = "spearman")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_NonMatchings_with_totals_S.png")
+
+cormatrix <- rcorr(corr_data, type = "pearson")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_NonMatchings_with_totals_P.png")
 
 # with RT for matching - RT  for non-matching
 corr_data <- as.matrix(cbind ((RT$matching-RT$nonmatching), questionnaireData[,c(5, 12, 17)])) 
 colnames(corr_data) <- c("RT_match_min_nonmatch", "AQ_total", "SRS_total", "factorscores")
-rcorr(corr_data, type = "spearman")
-rcorr(corr_data, type = "pearson")
+
+cormatrix <- rcorr(corr_data, type = "spearman")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_RTs_with_totals_S.png")
+
+cormatrix <- rcorr(corr_data, type = "pearson")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_RTs_with_totals_P.png")

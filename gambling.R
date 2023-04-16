@@ -1,5 +1,6 @@
 # setwd("~/Desktop/3-2/brsm/BRSM_Project/data")
-setwd("/Users/kakarot/Desktop/BRSM PROJECT/Data")
+# setwd("/Users/kakarot/Desktop/BRSM PROJECT/Data")
+setwd ("C:\\Users\\Lenovo\\Documents\\RawData")
 
 library(ggplot2)
 library(Hmisc)
@@ -96,6 +97,8 @@ ggplot (preference_mean) + geom_bar (aes (x = deck, y = mean), stat = "identity"
         axis.ticks.x = element_blank(), axis.title=element_text(size=20), axis.title.x = element_blank()) +
   ylab ("preference (percentage wise)")
 
+ggsave('Preference_Vs_Deck.png')
+
 mean(gambling_data$rt)
 sd(gambling_data$rt)
 
@@ -128,22 +131,150 @@ ggplot(df, aes(x = conditions, y = means)) +
   ylim(0, 600) +
   theme_classic()
 
+ggsave('Reaction_Time_Vs_Deck.png')
+
+abbreviateSTR <- function(value, prefix){  # format string more concisely
+  lst = c()
+  for (item in value) {
+    if (is.nan(item) || is.na(item)) { # if item is NaN return empty string
+      lst <- c(lst, '')
+      next
+    }
+    item <- round(item, 2) # round to two digits
+    if (item == 0) { # if rounding results in 0 clarify
+      item = '<.01'
+    }
+    item <- as.character(item)
+    item <- sub("(^[0])+", "", item)    # remove leading 0: 0.05 -> .05
+    item <- sub("(^-[0])+", "-", item)  # remove leading -0: -0.05 -> -.05
+    lst <- c(lst, paste(prefix, item, sep = ""))
+  }
+  return(lst)
+}
+
 
 corr_data <- as.matrix(cbind (preference$fixed, questionnaire_data[,c(5, 12, 17)]))
 colnames(corr_data) <- c("preference_fixed", "AQ_total", "SRS_total", "factorscores")
-rcorr(corr_data, type = "spearman")
-rcorr(corr_data, type = "pearson")
+
+cormatrix <- rcorr(corr_data, type = "spearman")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_Deck_with_totals_S.png")
+
+cormatrix <- rcorr(corr_data, type = "pearson")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_Deck_with_totals_P.png")
 
 corr_data <- as.matrix(cbind (((preference$fixed*1) + (preference$SD10*2) + (preference$SD30*3) + (preference$SD70*4)), questionnaire_data[,c(5, 12, 17)]))
 colnames(corr_data) <- c("weighted_sum_score", "AQ_total", "SRS_total", "factorscores")
-rcorr(corr_data, type = "spearman")
-rcorr(corr_data, type = "pearson")
+
+cormatrix <- rcorr(corr_data, type = "spearman")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_weightedsums_with_totals_S.png")
+
+cormatrix <- rcorr(corr_data, type = "pearson")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_weightedsums_with_totals_P.png")
 
 reaction_time_diff <- (rowMeans(reaction_time[,3:5]) - reaction_time$fixed)
 corr_data <- as.matrix(cbind (reaction_time_diff, questionnaire_data[,c(5, 12, 17)]))
 colnames(corr_data) <- c("RT_diff", "AQ_total", "SRS_total", "factorscores")
-rcorr(corr_data, type = "spearman")
-rcorr(corr_data, type = "pearson")
+cormatrix <- rcorr(corr_data, type = "spearman")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_RTDiff_with_totals_S.png")
+
+cormatrix <- rcorr(corr_data, type = "pearson")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_RTDiff_with_totals_P.png")
 
 corr_data <- as.data.frame(corr_data)
 p1 <- ggplot(corr_data, aes(x=factorscores, y=RT_diff)) + geom_point(size = 2) +
@@ -167,11 +298,48 @@ p3 <- ggplot(corr_data, aes(x=SRS_total, y=RT_diff)) + geom_point(size = 2) +
         axis.title.y = element_blank()) +
   xlab("SRS-A")+ ylab("Reaction time difference")
 
+g <- grid.arrange(p1, p2, p3, nrow = 1)
+ggsave(file='RT_vs_components.png', g)
+
 # display plots individually
 corr_data <- as.matrix(cbind(reaction_time_diff, questionnaire_data[,c(5:10, 12:17)]))
 colnames(corr_data) <- c("RT_diff", "AQ_total", "AQ_social", "AQ_switch", "AQ_detail", "AQ_comm", "AQ_imag", "SRS_total", "SRS_consc", "SRS_comm", "SRS_motiv", "SRS_rigid", "factorscores")
-rcorr(corr_data, type = "spearman")
-rcorr(corr_data, type = "pearson")
+cormatrix <- rcorr(corr_data, type = "spearman")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_RTDiff_with_partwise_S.png")
+cormatrix <- rcorr(corr_data, type = "pearson")
+cordata = melt(cormatrix$r)
+print(cordata)
+cordata$labelr = abbreviateSTR(melt(cormatrix$r)$value, 'r')
+cordata$labelP = abbreviateSTR(melt(cormatrix$P)$value, 'P')
+cordata$label = paste(cordata$labelr, "\n", 
+                      cordata$labelP, sep = "")
+
+hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
+
+txtsize <- par('din')[2] / 2
+
+ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
+  theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
+  xlab("") + ylab("") + 
+  geom_text(label=cordata$label, size=txtsize)
+
+ggsave("Correlations_of_RTDiff_with_partwise_P.png")
 
 print(p1)
 print(p2)
