@@ -1,5 +1,3 @@
-# setwd("~/Desktop/3-2/brsm/BRSM_Project/data")
-# setwd("/Users/kakarot/Desktop/BRSM PROJECT/Data")
 setwd ("C:\\Users\\Lenovo\\Documents\\RawData")
 
 library(ggplot2)
@@ -7,7 +5,7 @@ library(Hmisc)
 
 questionnaire_data <- read.csv ("QuestionnaireData.csv", header=TRUE, stringsAsFactors = FALSE)
 
-n <- 164 # needs to be changed
+n <- 164 
 participants_to_be_removed <- c(97, 105, 117, 36,  44,  90,  93,  95, 106, 134, 136, 155) 
 # according to authors participants 97, 105, 117 had inconsistent AQ/SRS scores 
 # and the others didn't choose each deck at least 5 times
