@@ -167,6 +167,7 @@ colnames(corr_data) <- c("preference_for_match", "AQ_total", "SRS_total", "facto
 
 fitScores_orig <- lm(preference_for_match ~ AQ_total + SRS_total + factorscores, as.data.frame(corr_data));
 
+
 p1 <- effect_plot(fitScores_orig, pred = factorscores, interval=TRUE, plot.points = TRUE)
 p2 <- effect_plot(fitScores_orig, pred = AQ_total, interval=TRUE, plot.points = TRUE)
 p3 <- effect_plot(fitScores_orig, pred = SRS_total, interval=TRUE, plot.points = TRUE)
@@ -230,14 +231,21 @@ p3 <- ggplot(corr_data, aes(x=SRS_total, y=preference_match_over_nonmatch)) + ge
   geom_smooth(method=lm, se=FALSE, col = "black", size = 0.5) +
   xlab("SRS-A")
 
-g <- grid.arrange(p1, p2, p3, widths = c(1.075, 1, 1), nrow = 3)
+g <- grid.arrange(p1, p2, p3, nrow = 3)
 
 ggsave(file='Preference%_vs_components.png', g)
 
 # with preference for matching over nonmatching, all subscales
 corr_data <- as.matrix(cbind((preference$matching-preference$nonmatching), questionnaireData[,c(5:10, 12:17)]))
-colnames(corr_data) <- c("preference_match_over_nonmatch", "AQ_total", "AQ_soc_skills", "AQ_att_switch", "AQ_att_detail", "AQ_comm", "AQ_imag", "SRS_total", "SRS_consc", "SRS_comm", "SRS_mot", "SRS_rig", "factorscores")
+colnames(corr_data) <- c("preference_match_over_nonmatch", "AQ_total", "AQ_social", "AQ_switch", "AQ_detail", "AQ_comm", "AQ_imag", "SRS_total", "SRS_consc", "SRS_comm", "SRS_motiv", "SRS_rigid", "factorscores")
 cormatrix <- rcorr(corr_data, type = "spearman")
+
+fitScores <- lm(preference_match_over_nonmatch ~ AQ_social + AQ_switch + AQ_detail + AQ_comm + AQ_imag + SRS_consc + SRS_comm + SRS_motiv + SRS_rigid, as.data.frame(corr_data));
+summary(fitScores)
+vif(fitScores)
+
+print(AIC(fitScores_orig))
+print(AIC(fitScores))
 
 rcorr(corr_data, type = "pearson")
 
