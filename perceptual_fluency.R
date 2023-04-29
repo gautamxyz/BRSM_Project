@@ -1,8 +1,16 @@
-setwd("/Users/kakarot/Desktop/BRSM PROJECT/Data")
+# setwd("/Users/kakarot/Desktop/BRSM PROJECT/Data")
+setwd ("C:\\Users\\Lenovo\\Documents\\RawData")
 
 library(Hmisc)
 library(ggplot2)
 library(gridExtra)
+library(lme4)
+library(car) 
+library(reshape)
+library(pracma)
+library('GiNA')
+# library(usdm)
+library(jtools)
 
 #### PARTICIPANT NUMBERS 
 n <- 164
@@ -69,13 +77,16 @@ levels(preferenceMean$matching) <- c("non-matching", "matching")
 
 ggplot (preferenceMean) + geom_bar (aes (x = matching, y = preference), stat = "identity", fill = "gray") +
   geom_errorbar (aes (x = matching, ymin = preference - sem, ymax = preference + sem), width=0.4, size=0.4) +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), 
-        axis.line.y = element_line(colour = "black"), axis.text.x = element_text(size = 18), 
-        axis.ticks.x = element_blank(), axis.title=element_text(size=20), axis.text.y = element_text(size=20),
-        plot.margin = unit(c(0.5,0.5,0.2,0.2),"cm"), axis.title.x = element_blank()) +
+  # theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), 
+  #       axis.line.y = element_line(colour = "black"), axis.text.x = element_text(size = 18), 
+  #       axis.ticks.x = element_blank(), axis.title=element_text(size=20), axis.text.y = element_text(size=20),
+  #       plot.margin = unit(c(0.5,0.5,0.2,0.2),"cm"), axis.title.x = element_blank()) +
   coord_cartesian(ylim=c(3,4))
 
 ggsave('Matching_Vs_Preference.png')
+
+res.ftest <- var.test(preference$matching, preference$nonmatching)
+res.ftest
 
 # two-tailed t.test
 t.test (preference$matching, preference$nonmatching, alternative = "two.sided", paired = TRUE, conf.level = 0.95)
@@ -117,9 +128,12 @@ for (k in 1:length(participantsList)){
 
 
 # barplot
-barplot (c(mean(RT$matching), mean(RT$nonmatching)), names = c("matching", "non-matching"), ylim = c(1, 1.2), ylab = "Reaction time")
+barplot (c(mean(RT$matching), mean(RT$nonmatching)), names = c("matching", "non-matching"), ylab = "Reaction time")
 
 ggsave('Matching_Vs_RT.png')
+
+res.ftest <- var.test(RT$matching, RT$nonmatching)
+res.ftest
 
 # t.test
 t.test (RT$matching, RT$nonmatching, alternative = "two.sided", paired = TRUE, conf.level = 0.95)
@@ -148,7 +162,19 @@ abbreviateSTR <- function(value, prefix){  # format string more concisely
 # with preference for matching over non-matching
 # Create a data matrix with relevant columns from preference and questionnaire_data
 corr_data <- as.matrix(cbind ((preference$matching-preference$nonmatching), questionnaireData[,c(5, 12, 17)]))
-colnames(corr_data) <- c("preference_match_over_nonmatch", "AQ_total", "SRS_total", "factorscores")
+colnames(corr_data) <- c("preference_for_match", "AQ_total", "SRS_total", "factorscores")
+
+
+fitScores_orig <- lm(preference_for_match ~ AQ_total + SRS_total + factorscores, as.data.frame(corr_data));
+
+p1 <- effect_plot(fitScores_orig, pred = factorscores, interval=TRUE, plot.points = TRUE)
+p2 <- effect_plot(fitScores_orig, pred = AQ_total, interval=TRUE, plot.points = TRUE)
+p3 <- effect_plot(fitScores_orig, pred = SRS_total, interval=TRUE, plot.points = TRUE)
+
+g <- grid.arrange(grobs=list(p1, p2, p3), nrows=3);
+
+ggsave('LM_Totals_vs_matching.png')
+
 cormatrix <- rcorr(corr_data, type = "spearman")
 cordata = melt(cormatrix$r)
 print(cordata)
@@ -193,26 +219,18 @@ library(ggplot2)
 library(gridExtra)
 p1 <- ggplot(corr_data, aes(x=factorscores, y=preference_match_over_nonmatch)) + geom_point(size = 2) +
   geom_smooth(method=lm, se=FALSE, col = "black", size = 0.5) +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), 
-        axis.line = element_line(colour = "black"), axis.title=element_text(size=15), axis.text = element_text(size=15), aspect.ratio=1) +
   xlab("PCA factor") +
   ylab("preference difference")
 
 p2 <- ggplot(corr_data, aes(x=AQ_total, y=preference_match_over_nonmatch)) + geom_point(size = 2) +
   geom_smooth(method=lm, se=FALSE, col = "black", size = 0.5) +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), 
-        axis.line = element_line(colour = "black"), axis.title=element_text(size=15), axis.text = element_text(size=15), aspect.ratio=1,
-        axis.title.y = element_blank()) +
   xlab("AQ")
 
 p3 <- ggplot(corr_data, aes(x=SRS_total, y=preference_match_over_nonmatch)) + geom_point(size = 2) +
   geom_smooth(method=lm, se=FALSE, col = "black", size = 0.5) +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), 
-        axis.line = element_line(colour = "black"), axis.title=element_text(size=15), axis.text = element_text(size=15), aspect.ratio=1,
-        axis.title.y = element_blank()) +
   xlab("SRS-A")
 
-grid.arrange(p1, p2, p3, widths = c(1.075, 1, 1), nrow = 1)
+g <- grid.arrange(p1, p2, p3, widths = c(1.075, 1, 1), nrow = 3)
 
 ggsave(file='Preference%_vs_components.png', g)
 
@@ -236,12 +254,12 @@ cordata$label = paste(cordata$labelr, "\n",
 
 hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
 
-txtsize <- par('din')[2] / 2
+txtsize <- par('din')[2] / 4
 
 ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
   theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
   xlab("") + ylab("") + 
-  geom_text(label=cordata$label, size=txtsize)
+  geom_text(label=cordata$label, size=txtsize, color='white')
 
 ggsave("Correlations_of_Matchings_with_partwise_S.png")
 
@@ -255,12 +273,12 @@ cordata$label = paste(cordata$labelr, "\n",
 
 hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')
 
-txtsize <- par('din')[2] / 2
+txtsize <- par('din')[2] / 4
 
 ggplot(cordata, aes(x=X1, y=X2, fill=value)) + geom_tile() + 
   theme(axis.text.x = element_text(angle=90, hjust=TRUE)) +
   xlab("") + ylab("") + 
-  geom_text(label=cordata$label, size=txtsize)
+  geom_text(label=cordata$label, size=txtsize, color='white')
 
 ggsave("Correlations_of_Matchings_with_partwise_P.png")
 
@@ -307,7 +325,7 @@ ggsave("Correlations_of_NonMatchings_with_totals_P.png")
 
 # with RT for matching - RT  for non-matching
 corr_data <- as.matrix(cbind ((RT$matching-RT$nonmatching), questionnaireData[,c(5, 12, 17)])) 
-colnames(corr_data) <- c("RT_match_min_nonmatch", "AQ_total", "SRS_total", "factorscores")
+colnames(corr_data) <- c("RT_match_minus_nonmatch", "AQ_total", "SRS_total", "factorscores")
 
 cormatrix <- rcorr(corr_data, type = "spearman")
 cordata = melt(cormatrix$r)
